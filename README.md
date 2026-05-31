@@ -66,13 +66,13 @@ The main guardrail is that DeadlinePilot should not provide false reassurance. I
 
 The draft includes three synthetic evaluation scenarios:
 
-1. Normal Workload Test  
+1. **Normal Workload Test**  
    Expected result: manageable status and reviewer approval.
 
-2. Messy Input Test  
+2. **Messy Input Test**  
    Expected result: missing information is flagged and reviewer asks for revision.
 
-3. Overload Failure Test  
+3. **Overload Failure Test**  
    Expected result: overloaded status, risk warnings, and a triage plan instead of false reassurance.
 
 ## Known Limitation
