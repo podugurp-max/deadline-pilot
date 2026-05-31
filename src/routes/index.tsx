@@ -1,29 +1,253 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
+import { Plus, Play, GraduationCap } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { AssignmentCard } from "@/components/AssignmentCard";
+import { RecoveryOutput } from "@/components/RecoveryOutput";
+import { AgentTraceView } from "@/components/AgentTraceView";
+import {
+  runRecovery,
+  type Assignment,
+  type Energy,
+  type RecoveryPlan,
+  type StudentContext,
+} from "@/lib/recovery-engine";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Your App" },
-      { name: "description", content: "Replace this with a one-sentence description of your app." },
-      { property: "og:title", content: "Your App" },
-      { property: "og:description", content: "Replace this with a one-sentence description of your app." },
+      { title: "DeadlinePilot — Academic Deadline Recovery Assistant" },
+      {
+        name: "description",
+        content:
+          "Agentic academic triage that helps overwhelmed students prioritize assignments, check feasibility, and build a realistic recovery plan.",
+      },
+      { property: "og:title", content: "DeadlinePilot" },
+      {
+        property: "og:description",
+        content: "Agentic academic triage for deadline overload.",
+      },
     ],
   }),
-  component: Index,
+  component: DeadlinePilot,
 });
 
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
-function Index() {
+const todayLocal = () => {
+  const d = new Date();
+  d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+  return d.toISOString().slice(0, 10);
+};
+
+const newAssignment = (): Assignment => ({
+  id: crypto.randomUUID(),
+  name: "",
+  course: "",
+  dueAt: "",
+  hoursRemaining: 1,
+  weight: 10,
+  progress: 0,
+  difficulty: "medium",
+  notes: "",
+});
+
+function DeadlinePilot() {
+  const [ctx, setCtx] = useState<StudentContext>({
+    currentDate: todayLocal(),
+    hoursToday: 3,
+    hoursTomorrow: 5,
+    energy: "medium",
+    stress: "medium",
+    fixedCommitments: "",
+  });
+
+  const [assignments, setAssignments] = useState<Assignment[]>([newAssignment()]);
+  const [plan, setPlan] = useState<RecoveryPlan | null>(null);
+
+  const update = <K extends keyof StudentContext>(k: K, v: StudentContext[K]) =>
+    setCtx((c) => ({ ...c, [k]: v }));
+
+  const run = () => {
+    const ctxIso: StudentContext = {
+      ...ctx,
+      currentDate: new Date(ctx.currentDate + "T00:00:00").toISOString(),
+    };
+    setPlan(runRecovery(ctxIso, assignments));
+    setTimeout(() => {
+      document
+        .getElementById("recovery-output")
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 50);
+  };
+
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <header className="border-b border-border bg-card">
+        <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-6 sm:px-6">
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+            <GraduationCap className="h-6 w-6" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">
+              DeadlinePilot
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              Agentic academic triage for deadline overload
+            </p>
+          </div>
+        </div>
+      </header>
+
+      <main className="mx-auto max-w-6xl space-y-8 px-4 py-8 sm:px-6">
+        {/* Student context */}
+        <section className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+          <h2 className="mb-4 text-lg font-semibold text-foreground">Student context</h2>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div>
+              <Label htmlFor="date">Current date</Label>
+              <Input
+                id="date"
+                type="date"
+                value={ctx.currentDate}
+                onChange={(e) => update("currentDate", e.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="today">Hours available today</Label>
+              <Input
+                id="today"
+                type="number"
+                min={0}
+                step={0.5}
+                value={ctx.hoursToday}
+                onChange={(e) => update("hoursToday", Number(e.target.value))}
+              />
+            </div>
+            <div>
+              <Label htmlFor="tomorrow">Hours available tomorrow</Label>
+              <Input
+                id="tomorrow"
+                type="number"
+                min={0}
+                step={0.5}
+                value={ctx.hoursTomorrow}
+                onChange={(e) => update("hoursTomorrow", Number(e.target.value))}
+              />
+            </div>
+            <div>
+              <Label>Energy level</Label>
+              <Select
+                value={ctx.energy}
+                onValueChange={(v) => update("energy", v as Energy)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="low">Low</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="high">High</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Stress level</Label>
+              <Select
+                value={ctx.stress}
+                onValueChange={(v) => update("stress", v as Energy)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="low">Low</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="high">High</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="sm:col-span-2 lg:col-span-3">
+              <Label htmlFor="commitments">Fixed commitments</Label>
+              <Textarea
+                id="commitments"
+                rows={2}
+                value={ctx.fixedCommitments}
+                onChange={(e) => update("fixedCommitments", e.target.value)}
+                placeholder="Classes, work shift 3–6pm, soccer practice tonight, etc."
+              />
+            </div>
+          </div>
+        </section>
+
+        {/* Assignments */}
+        <section className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-foreground">Assignments</h2>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setAssignments((a) => [...a, newAssignment()])}
+            >
+              <Plus className="mr-1 h-4 w-4" /> Add assignment
+            </Button>
+          </div>
+
+          <div className="space-y-3">
+            {assignments.map((a, i) => (
+              <AssignmentCard
+                key={a.id}
+                index={i}
+                assignment={a}
+                onChange={(next) =>
+                  setAssignments((all) => all.map((x) => (x.id === a.id ? next : x)))
+                }
+                onRemove={() =>
+                  setAssignments((all) => all.filter((x) => x.id !== a.id))
+                }
+              />
+            ))}
+            {assignments.length === 0 && (
+              <p className="rounded-xl border border-dashed border-border bg-card p-6 text-center text-sm text-muted-foreground">
+                No assignments yet. Add one to get started.
+              </p>
+            )}
+          </div>
+        </section>
+
+        {/* Run */}
+        <div className="flex justify-center">
+          <Button
+            size="lg"
+            onClick={run}
+            className="px-8 py-6 text-base font-semibold shadow-md"
+          >
+            <Play className="mr-2 h-5 w-5" />
+            Run Recovery Plan
+          </Button>
+        </div>
+
+        {/* Output */}
+        {plan && (
+          <div id="recovery-output" className="grid gap-6 lg:grid-cols-[1fr_360px]">
+            <RecoveryOutput plan={plan} />
+            <AgentTraceView trace={plan.trace} />
+          </div>
+        )}
+      </main>
+
+      <footer className="border-t border-border py-6 text-center text-xs text-muted-foreground">
+        DeadlinePilot — deterministic agentic workflow demo
+      </footer>
     </div>
   );
 }
