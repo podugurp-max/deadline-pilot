@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { Plus, Play, GraduationCap } from "lucide-react";
+import { Plus, Play, GraduationCap, Workflow, FlaskConical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,6 +22,12 @@ import {
   type RecoveryPlan,
   type StudentContext,
 } from "@/lib/recovery-engine";
+import {
+  normalWorkloadTest,
+  messyInputTest,
+  overloadFailureTest,
+  type TestFixture,
+} from "@/lib/test-fixtures";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -89,6 +95,13 @@ function DeadlinePilot() {
     }, 50);
   };
 
+  const loadFixture = (f: TestFixture) => {
+    setCtx(f.context);
+    // Clone assignments with fresh ids
+    setAssignments(f.assignments.map((a) => ({ ...a, id: crypto.randomUUID() })));
+    setPlan(null);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -109,6 +122,73 @@ function DeadlinePilot() {
       </header>
 
       <main className="mx-auto max-w-6xl space-y-8 px-4 py-8 sm:px-6">
+        {/* About the Agentic Workflow */}
+        <section className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+          <h2 className="mb-3 flex items-center gap-2 text-lg font-semibold text-foreground">
+            <Workflow className="h-5 w-5 text-primary" />
+            About the Agentic Workflow
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            DeadlinePilot uses an{" "}
+            <span className="font-medium text-foreground">orchestrator-style workflow</span>{" "}
+            where a controller routes the student's input through a sequence of specialized
+            agents. Each agent owns one narrow responsibility, and a final reviewer audits
+            the combined output before it is shown — so the system can refuse false
+            reassurance when the workload is unrealistic.
+          </p>
+          <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {[
+              ["Task Parser Agent", "Normalizes raw assignment input into structured tasks."],
+              ["Priority Agent", "Scores tasks by urgency, weight, progress, and difficulty."],
+              ["Feasibility Agent", "Compares required vs available hours; sets status."],
+              ["Schedule Builder Agent", "Allocates time blocks across today and tomorrow."],
+              ["Risk Agent", "Flags procrastination, low-energy, and deadline risks."],
+              ["Reviewer Agent", "Audits the plan; approves or sends back for revision."],
+            ].map(([name, desc]) => (
+              <div
+                key={name}
+                className="rounded-lg border border-border bg-muted/40 p-3"
+              >
+                <p className="text-sm font-semibold text-foreground">{name}</p>
+                <p className="mt-0.5 text-xs text-muted-foreground">{desc}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Evaluation Demo */}
+        <section className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+          <h2 className="mb-1 flex items-center gap-2 text-lg font-semibold text-foreground">
+            <FlaskConical className="h-5 w-5 text-primary" />
+            Evaluation Demo
+          </h2>
+          <p className="mb-4 text-sm text-muted-foreground">
+            Load synthetic test cases to evaluate the agent across three scenarios. After
+            loading, click <span className="font-medium">Run Recovery Plan</span> to see the
+            agent's response.
+          </p>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <TestButton
+              tone="success"
+              title="Load Normal Workload Test"
+              caption="Manageable schedule — expect approval."
+              onClick={() => loadFixture(normalWorkloadTest)}
+            />
+            <TestButton
+              tone="warning"
+              title="Load Messy Input Test"
+              caption="Missing fields — expect reviewer revision."
+              onClick={() => loadFixture(messyInputTest)}
+            />
+            <TestButton
+              tone="danger"
+              title="Load Overload Failure Test"
+              caption="Required ≫ available — agent must triage, not reassure."
+              onClick={() => loadFixture(overloadFailureTest)}
+            />
+          </div>
+        </section>
+
         {/* Student context */}
         <section className="rounded-2xl border border-border bg-card p-5 shadow-sm">
           <h2 className="mb-4 text-lg font-semibold text-foreground">Student context</h2>
@@ -249,5 +329,41 @@ function DeadlinePilot() {
         DeadlinePilot — deterministic agentic workflow demo
       </footer>
     </div>
+  );
+}
+
+function TestButton({
+  title,
+  caption,
+  tone,
+  onClick,
+}: {
+  title: string;
+  caption: string;
+  tone: "success" | "warning" | "danger";
+  onClick: () => void;
+}) {
+  const toneClasses = {
+    success: "border-success/40 bg-success/5 hover:bg-success/10",
+    warning: "border-warning/40 bg-warning/5 hover:bg-warning/10",
+    danger: "border-danger/40 bg-danger/5 hover:bg-danger/10",
+  }[tone];
+  const dotClasses = {
+    success: "bg-success",
+    warning: "bg-warning",
+    danger: "bg-danger",
+  }[tone];
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex flex-col items-start gap-1 rounded-xl border p-4 text-left transition-colors ${toneClasses}`}
+    >
+      <span className="flex items-center gap-2">
+        <span className={`h-2 w-2 rounded-full ${dotClasses}`} />
+        <span className="text-sm font-semibold text-foreground">{title}</span>
+      </span>
+      <span className="text-xs text-muted-foreground">{caption}</span>
+    </button>
   );
 }
