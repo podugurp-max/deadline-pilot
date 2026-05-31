@@ -263,10 +263,10 @@ export function runRecovery(
     reviewerIssues.push(`${missingInfo.length} field(s) missing — recommendations may be off.`);
   if (parsed.length > 0 && availableHours === 0)
     reviewerIssues.push("Zero available hours entered — cannot schedule anything.");
-  const reviewerCheck =
-    reviewerIssues.length === 0
-      ? "Plan is internally consistent. Feasibility matches schedule; risks acknowledged."
-      : reviewerIssues.join(" ");
+  const reviewerApproved = reviewerIssues.length === 0;
+  const reviewerCheck = reviewerApproved
+    ? "APPROVED — plan is internally consistent. Feasibility matches schedule; risks acknowledged."
+    : `NEEDS REVISION — ${reviewerIssues.join(" ")}`;
   trace.push({
     agent: "Reviewer Agent",
     output: reviewerCheck,
@@ -285,6 +285,7 @@ export function runRecovery(
     risks,
     missingInfo,
     reviewerCheck,
+    reviewerApproved,
     trace,
   };
 }
