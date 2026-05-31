@@ -331,3 +331,39 @@ function DeadlinePilot() {
     </div>
   );
 }
+
+function TestButton({
+  title,
+  caption,
+  tone,
+  onClick,
+}: {
+  title: string;
+  caption: string;
+  tone: "success" | "warning" | "danger";
+  onClick: () => void;
+}) {
+  const toneClasses = {
+    success: "border-success/40 bg-success/5 hover:bg-success/10",
+    warning: "border-warning/40 bg-warning/5 hover:bg-warning/10",
+    danger: "border-danger/40 bg-danger/5 hover:bg-danger/10",
+  }[tone];
+  const dotClasses = {
+    success: "bg-success",
+    warning: "bg-warning",
+    danger: "bg-danger",
+  }[tone];
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex flex-col items-start gap-1 rounded-xl border p-4 text-left transition-colors ${toneClasses}`}
+    >
+      <span className="flex items-center gap-2">
+        <span className={`h-2 w-2 rounded-full ${dotClasses}`} />
+        <span className="text-sm font-semibold text-foreground">{title}</span>
+      </span>
+      <span className="text-xs text-muted-foreground">{caption}</span>
+    </button>
+  );
+}
