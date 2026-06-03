@@ -12,9 +12,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useServerFn } from "@tanstack/react-start";
 import { AssignmentCard } from "@/components/AssignmentCard";
 import { RecoveryOutput } from "@/components/RecoveryOutput";
 import { AgentTraceView } from "@/components/AgentTraceView";
+import { LlmReviewerOutput } from "@/components/LlmReviewerOutput";
 import {
   runRecovery,
   type Assignment,
@@ -22,6 +24,10 @@ import {
   type RecoveryPlan,
   type StudentContext,
 } from "@/lib/recovery-engine";
+import {
+  reviewPlanWithGemini,
+  type LlmReviewResponse,
+} from "@/lib/reviewer.functions";
 import {
   normalWorkloadTest,
   messyInputTest,
