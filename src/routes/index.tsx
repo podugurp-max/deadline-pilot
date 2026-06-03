@@ -387,7 +387,10 @@ function DeadlinePilot() {
         {/* Output */}
         {plan && (
           <div id="recovery-output" className="grid gap-6 lg:grid-cols-[1fr_360px]">
-            <RecoveryOutput plan={plan} />
+            <div className="space-y-6">
+              <RecoveryOutput plan={plan} />
+              {llmReview && <LlmReviewerOutput state={llmReview} />}
+            </div>
             <AgentTraceView trace={plan.trace} />
           </div>
         )}
