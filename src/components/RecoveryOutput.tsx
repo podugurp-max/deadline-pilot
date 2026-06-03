@@ -18,17 +18,27 @@ function feasibilityStyles(f: Feasibility) {
       label: "Manageable",
       className: "bg-success text-success-foreground",
       bar: "bg-success",
+      tone: "success" as const,
     };
   if (f === "tight")
     return {
       label: "Tight",
       className: "bg-warning text-warning-foreground",
       bar: "bg-warning",
+      tone: "warning" as const,
+    };
+  if (f === "provisional")
+    return {
+      label: "Needs Clarification",
+      className: "bg-warning text-warning-foreground",
+      bar: "bg-warning",
+      tone: "warning" as const,
     };
   return {
     label: "Overloaded",
     className: "bg-danger text-danger-foreground",
     bar: "bg-danger",
+    tone: "danger" as const,
   };
 }
 
@@ -43,7 +53,7 @@ export function RecoveryOutput({ plan }: { plan: RecoveryPlan }) {
         className={`rounded-2xl border p-6 shadow-sm ${
           plan.feasibility === "overloaded"
             ? "border-danger/40 bg-danger/5"
-            : plan.feasibility === "tight"
+            : plan.feasibility === "tight" || plan.feasibility === "provisional"
               ? "border-warning/40 bg-warning/5"
               : "border-success/40 bg-success/5"
         }`}
@@ -60,16 +70,26 @@ export function RecoveryOutput({ plan }: { plan: RecoveryPlan }) {
           <Badge className={`${f.className} px-3 py-1 text-sm`}>{f.label}</Badge>
         </div>
 
-        <div className="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-3">
-          <Metric label="Required" value={`${plan.requiredHours.toFixed(1)}h`} />
-          <Metric label="Available" value={`${plan.availableHours.toFixed(1)}h`} />
+        <div className="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <Metric
+            label="Raw hours"
+            value={`${plan.rawRequiredHours.toFixed(1)}h`}
+            hint="Sum of stated hours remaining."
+          />
+          <Metric
+            label="Difficulty-adjusted"
+            value={`${plan.adjustedRequiredHours.toFixed(1)}h`}
+            hint="Raw × difficulty multiplier (used for feasibility only)."
+          />
+          <Metric
+            label="Available"
+            value={`${plan.availableHours.toFixed(1)}h`}
+            hint="Today + tomorrow."
+          />
           <Metric
             label="Workload ratio"
-            value={
-              isFinite(plan.workloadRatio)
-                ? plan.workloadRatio.toFixed(2)
-                : "—"
-            }
+            value={isFinite(plan.workloadRatio) ? plan.workloadRatio.toFixed(2) : "—"}
+            hint="Adjusted ÷ available."
           />
         </div>
         <div className="mt-3">
@@ -80,7 +100,7 @@ export function RecoveryOutput({ plan }: { plan: RecoveryPlan }) {
             />
           </div>
           <p className="mt-1 text-xs text-muted-foreground">
-            Thresholds: ≤0.85 manageable · 0.86–1.15 tight · ≥1.16 overloaded
+            Thresholds: ≤0.85 manageable · 0.86–1.15 tight · ≥1.16 overloaded · provisional when key info is missing
           </p>
         </div>
       </div>
@@ -96,18 +116,23 @@ export function RecoveryOutput({ plan }: { plan: RecoveryPlan }) {
           {plan.ranking.map((r, i) => (
             <li
               key={r.id}
-              className="flex items-start gap-3 rounded-lg border border-border bg-card p-3"
+              className={`flex items-start gap-3 rounded-lg border p-3 ${
+                r.isIncomplete ? "border-warning/40 bg-warning/5" : "border-border bg-card"
+              }`}
             >
               <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
                 {i + 1}
               </span>
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <p className="font-medium text-foreground">{r.name}</p>
+                  <p className="font-medium text-foreground">{r.name || "(unnamed)"}</p>
                   <Badge variant="secondary">{r.course || "—"}</Badge>
                   <Badge variant="outline" className="capitalize">
                     {r.difficulty}
                   </Badge>
+                  {r.isIncomplete && (
+                    <Badge className="bg-warning text-warning-foreground">Needs clarification</Badge>
+                  )}
                 </div>
                 <p className="mt-1 text-xs text-muted-foreground">{r.rationale}</p>
                 <div className="mt-2">
@@ -121,6 +146,30 @@ export function RecoveryOutput({ plan }: { plan: RecoveryPlan }) {
           )}
         </ol>
       </Section>
+
+      {/* Incomplete tasks */}
+      {plan.incompleteAssignments.length > 0 && (
+        <Section
+          icon={<AlertTriangle className="h-4 w-4" />}
+          title="Incomplete or invalid tasks"
+        >
+          <ul className="space-y-2">
+            {plan.incompleteAssignments.map((i) => (
+              <li
+                key={i.id}
+                className="rounded-lg border border-warning/40 bg-warning/5 p-3 text-sm"
+              >
+                <p className="font-medium text-foreground">{i.displayName}</p>
+                <ul className="mt-1 list-inside list-disc text-xs text-muted-foreground">
+                  {i.reasons.map((r, j) => (
+                    <li key={j}>{r}</li>
+                  ))}
+                </ul>
+              </li>
+            ))}
+          </ul>
+        </Section>
+      )}
 
       {/* Recovery plan */}
       <Section icon={<ListChecks className="h-4 w-4" />} title="Recommended recovery plan">
@@ -202,11 +251,12 @@ export function RecoveryOutput({ plan }: { plan: RecoveryPlan }) {
   );
 }
 
-function Metric({ label, value }: { label: string; value: string }) {
+function Metric({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
     <div>
       <p className="text-xs uppercase tracking-wide text-muted-foreground">{label}</p>
       <p className="mt-0.5 text-2xl font-semibold text-foreground">{value}</p>
+      {hint && <p className="mt-0.5 text-[10px] text-muted-foreground">{hint}</p>}
     </div>
   );
 }
