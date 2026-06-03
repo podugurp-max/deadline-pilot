@@ -18,17 +18,27 @@ function feasibilityStyles(f: Feasibility) {
       label: "Manageable",
       className: "bg-success text-success-foreground",
       bar: "bg-success",
+      tone: "success" as const,
     };
   if (f === "tight")
     return {
       label: "Tight",
       className: "bg-warning text-warning-foreground",
       bar: "bg-warning",
+      tone: "warning" as const,
+    };
+  if (f === "provisional")
+    return {
+      label: "Needs Clarification",
+      className: "bg-warning text-warning-foreground",
+      bar: "bg-warning",
+      tone: "warning" as const,
     };
   return {
     label: "Overloaded",
     className: "bg-danger text-danger-foreground",
     bar: "bg-danger",
+    tone: "danger" as const,
   };
 }
 
