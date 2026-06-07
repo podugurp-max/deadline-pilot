@@ -4,6 +4,22 @@
 
 DeadlinePilot uses an agentic workflow architecture. The system is organized around an orchestrator-style process where the user's input is routed through several specialized agents. Each agent has a narrow responsibility, and the final Reviewer Agent checks the combined output before the user sees the plan.
 
+## Final Architecture Update: Gemini Reviewer Agent
+
+The draft version used deterministic functions for all six agents. Based on instructor feedback, the final version keeps the deterministic workflow as a reliable scaffold but upgrades the Reviewer Agent to use a real Gemini API call.
+
+The first five agents still produce structured outputs:
+
+- Task Parser Agent
+- Priority Agent
+- Feasibility Agent
+- Schedule Builder Agent
+- Risk Agent
+
+The Reviewer Agent now sends those outputs to a server-side Gemini call. Gemini audits the plan for realism, missing information, false reassurance, overload handling, and approval status.
+
+This hybrid architecture keeps the deterministic evaluation harness while adding a real model-powered agent step.
+
 ## Data Flow
 
 1. User enters student context and assignments.
@@ -43,7 +59,7 @@ Audits the plan and decides whether it is approved or needs revision.
 
 ## Current Implementation
 
-The current draft uses deterministic JavaScript logic to simulate the agentic workflow. This was chosen for the working draft so the workflow, evaluation structure, and guardrails can be tested before adding a live LLM API.
+The final version uses a hybrid architecture. Deterministic logic handles structured parsing, priority scoring, feasibility calculation, schedule scaffolding, and risk detection. The Reviewer Agent is powered by a real Gemini API call and audits the deterministic output before final review.
 
 ## Feasibility Logic
 
