@@ -80,6 +80,10 @@ The system must flag planning risks such as overload, missing information, low e
 
 The system must include a final reviewer step that approves the plan or marks it as needing revision.
 
+### R9: LLM Reviewer Agent
+
+The system must include at least one real model-powered agent step. In the final version, the Reviewer Agent calls Gemini through a secure server-side API function to audit the deterministic recovery plan.
+
 ## Success Criteria
 
 DeadlinePilot is successful when it:
